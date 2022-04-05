@@ -1,5 +1,4 @@
 # TODO:
 
-- Optimize Setup page for mobile
 - Homework
-- Tests
+- Add Page to change courses after login

@@ -38,7 +38,7 @@ export interface UntisLessonData {
 //Data for one class of one day
 export type displayedLesson = (LessonData | undefined)[]
 
-export interface Timetable {
+export interface WeekData {
     type: "local" | "fetched"
 
     [key: string]: displayedLesson[],
@@ -50,7 +50,7 @@ export interface lsTimetable {
 
 export interface TimetableData {
     week: string[],
-    timetable: Timetable
+    timetable: WeekData
 }
 
 export interface stringToNumberEnum {
@@ -75,11 +75,38 @@ export interface designDataType {
     alpha: number,
 
 }
+export interface fetcherParams {
+    endpoint: string,
+    query: any,
+    useCache: boolean,
+    method: "POST" | "GET",
+}
 
 export interface customThemeType {
     apiEndpoint: string,
-    setDesignData: function,
-    setLessonColorEnum: function,
+    dayjs: typeof dayjs,
+    setDesignData: Function,
+    setLessonColorEnum: Function,
+    jwt: JWT,
+    fetcher({endpoint, query, useCache, method}: fetcherParams): Promise<any>,
+}
+
+export interface JWT {
+    set: Function,
+    validate: Function,
+    raw: string,
+    get: {
+        version: number,
+        iat: number,
+        username: String,
+        type: "password" | "secret",
+        password?: string,
+        secret?: string,
+        lk: number,
+        fachrichtung: number,
+        sonstiges: string[],
+    }
+
 }
 
 export interface setupData {

@@ -8,7 +8,7 @@ import {
 import Head from "next/head";
 import {useEffect, useState} from "react";
 import {useCustomTheme} from "../components/CustomTheme";
-import {useLayoutContext} from "../components/Layout";
+import {useLayoutContext } from "../components/Layout";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import {Add} from "@mui/icons-material";
 import {
@@ -19,18 +19,19 @@ import {
 import LoadingSpinner from "../components/LoadingSpinner";
 import AddDialog from "../components/AddDialog";
 
-interface homeworkData {
+interface klausurData {
+    room: string,
     subject: string,
-    text: string,
-    dueDate: string,
-    attachments: any[],
+    date: number,
+    startTime: string,
+    endTime: string,
 }
 
 export default function Exams() {
     const theme = useTheme();
     const { dayjs, jwt, fetcher} = useCustomTheme()
 
-    const [homework, setHomework] = useState([]);
+    const [klausuren, setKlausuren] = useState([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [isPosting, setIsPosting] = useState(false)
@@ -38,21 +39,22 @@ export default function Exams() {
 
     //Form
     const [subject, setSubject] = useState("");
-    const [text, setText] = useState("");
-    const [dueDate, setDueDate] = useState(dayjs().format("YYYY-MM-DD"));
+    const [room, setRoom] = useState("");
+    const [startTime, setStartTime] = useState(dayjs().format("YYYY-MM-DDTHH:mm"));
+    const [endTime, setEndTime] = useState(dayjs().format("HH:mm"));
     const [kurs, setKurs] = useState("");
 
-    const {setSnackbar, setFabs} = useLayoutContext();
+    const { setSnackbar, setFabs } = useLayoutContext();
 
-    const fetchHomework = () => {
+    const fetchExams = () => {
         setIsLoading(true);
         fetcher({
-            endpoint: "getHomework",
+            endpoint: "getExams",
             method: "GET",
             query: {},
             useCache: false,
         }).then((json) => {
-            setHomework(json.message);
+            setKlausuren(json.message);
             setIsLoading(false);
         }).catch((err) => {
             setSnackbar({
@@ -70,9 +72,9 @@ export default function Exams() {
                     setDialogOpen(true)
                 }
             },
-            {icon: <RefreshIcon/>, color: "primary", callback: fetchHomework}
-        ]   )
-        fetchHomework();
+            {icon: <RefreshIcon/>, color: "primary", callback: fetchExams}
+        ])
+        fetchExams();
         return () => {
             setFabs([]);
         }
@@ -81,7 +83,7 @@ export default function Exams() {
     return (
         <>
             <Head>
-                <title>Hausaufgaben</title>
+                <title>Klausuren</title>
             </Head>
             <Box
                 sx={{
@@ -96,7 +98,7 @@ export default function Exams() {
                 }}
             >
                 <AddDialog
-                    title={"Neue Hausaufgaben hinzufügen"}
+                    title={"Neue Klausur hinzufügen"}
                     isPosting={isPosting}
                     errorMessage={errorMessage}
                     open={dialogOpen}
@@ -106,7 +108,7 @@ export default function Exams() {
                     submit={() => {
                         setErrorMessage("");
 
-                        if(!subject || !text || !kurs){
+                        if(!subject || !room || !kurs){
                             setErrorMessage("Bitte gib alle benötigten Daten an.")
                             return;
                         }
@@ -114,17 +116,21 @@ export default function Exams() {
                         setIsPosting(true);
                         const data = {
                             subject: subject,
-                            text: text,
-                            dueDate: dueDate,
+                            room: room,
+                            startTime: dayjs(startTime).format("YYYY-MM-DD HH:mm:ss"),
+                            endTime: dayjs(startTime)
+                                .set("hour", endTime.substring(0, 2))
+                                .set("minute", endTime.substring(3,5)).format("YYYY-MM-DD HH:mm:ss"),
                             kurs: kurs,
                         }
+
                         fetcher({
                             method: "POST",
                             useCache: false,
-                            query: {homework: data},
-                            endpoint: "addHomework",
+                            query: {exam: data},
+                            endpoint: "addExam",
                         }).then(() => {
-                            fetchHomework();
+                            fetchExams();
                             setIsPosting(false);
                             setDialogOpen(false);
                             setSnackbar({
@@ -139,9 +145,9 @@ export default function Exams() {
 
                     }}
                 >
-                <Stack
-                    spacing={3}
-                >
+                    <Stack
+                        spacing={3}
+                    >
                     <TextField
                         required
                         name={"subject"}
@@ -159,14 +165,14 @@ export default function Exams() {
                     />
                     <TextField
                         required
-                        name={"text"}
+                        name={"room"}
                         margin="dense"
-                        value={text}
+                        value={room}
                         onChange={(e) => {
-                            setText(e.target.value)
+                            setRoom(e.target.value)
                         }}
-                        id="text"
-                        label="Text"
+                        id="room"
+                        label="Raum"
                         type="text"
                         fullWidth
                         variant="standard"
@@ -197,20 +203,33 @@ export default function Exams() {
                     <TextField
                         required
                         margin="dense"
-                        value={dueDate}
+                        value={startTime}
                         onChange={(e) => {
-                            setDueDate(e.target.value)
+                            setStartTime(e.target.value)
                         }}
-                        id="dueDate"
-                        label="Abgabe"
-                        type="date"
+                        id="room"
+                        label="Start zeit"
+                        type="datetime-local"
                         fullWidth
                         variant="standard"
                     />
-                </Stack>
+                    <TextField
+                        margin="dense"
+                        value={endTime}
+                        onChange={(e) => {
+                            setEndTime(e.target.value)
+                        }}
+                        id="room"
+                        label="End zeit"
+                        type="time"
+                        fullWidth
+                        variant="standard"
+                    />
+                    </Stack>
                 </AddDialog>
+
                 {
-                    !isLoading ? homework.length > 0 ? homework.map((homework: homeworkData, idx) => (
+                    !isLoading ? klausuren.length > 0 ? klausuren.map((klausur: klausurData, idx) => (
                         <Box
                             key={idx}
                             sx={{
@@ -227,11 +246,11 @@ export default function Exams() {
                                 alignItems: "center",
                             }}
                         >
-                            <h3>Fach: {homework.subject}</h3>
-                            <span>Text: {homework.text}</span>
-                            <span>Abgabe: {dayjs(homework.dueDate).format("DD.MM.YYYY")}</span>
+                            <h3>Fach: {klausur.subject}</h3>
+                            <span>Raum: {klausur.room}</span>
+                            <span>Datum: {dayjs.tz(klausur.startTime).format("DD.MM.YYYY HH:mm")} - {dayjs.tz(klausur.endTime).format("HH:mm")}</span>
                         </Box>
-                    )) : <h1>Keine Hausaufgaben</h1> : <LoadingSpinner />
+                    )) : <h1>Keine Klausuren</h1> : <LoadingSpinner/>
                 }
             </Box>
         </>
